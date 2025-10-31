@@ -39,7 +39,14 @@ p {
   color: rgba(240, 246, 252, 0.85);
 }
 
+
 .controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -56,6 +63,12 @@ p {
   gap: 12px;
 }
 
+.panel-help {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(240, 246, 252, 0.7);
+}
+
 #question-input {
   flex: 1;
   padding: 12px 16px;
@@ -69,6 +82,66 @@ p {
 #question-input:focus {
   outline: 2px solid rgba(33, 109, 255, 0.6);
   outline-offset: 2px;
+}
+
+.filters-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.filters-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: rgba(240, 246, 252, 0.85);
+}
+
+.filters-grid label span {
+  font-weight: 600;
+}
+
+.filters-grid select,
+.filters-grid input {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(240, 246, 252, 0.1);
+  background-color: rgba(22, 27, 34, 0.8);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.filters-grid select:focus,
+.filters-grid input:focus {
+  outline: 2px solid rgba(33, 109, 255, 0.5);
+  outline-offset: 1px;
+}
+
+.filters-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#stats-status {
+  font-size: 0.9rem;
+  min-height: 1.4em;
+  color: rgba(240, 246, 252, 0.75);
+}
+
+#stats-status[data-tone="error"] {
+  color: #ff6b6b;
+}
+
+#stats-status[data-tone="success"] {
+  color: #7ee787;
 }
 
 button {
@@ -116,6 +189,10 @@ button:not(:disabled):hover {
   color: #7ee787;
 }
 
+.panel #status-message {
+  margin-top: -4px;
+}
+
 .answer {
   padding: 24px;
   border-radius: 20px;
@@ -155,6 +232,10 @@ tbody tr:hover {
 }
 
 @media (max-width: 640px) {
+  .controls {
+    gap: 16px;
+  }
+
   #question-form {
     flex-direction: column;
   }

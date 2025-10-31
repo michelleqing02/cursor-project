@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal, Optional
+from enum import Enum
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -62,3 +63,18 @@ class DatasetStatus(BaseModel):
 
 class DataRefreshResponse(BaseModel):
     statuses: list[DatasetStatus]
+
+
+class StatsDataset(str, Enum):
+    PLAYER = "player"
+    TEAM = "team"
+    RECEIVING_EFFICIENCY = "receiving_efficiency"
+    QUARTERBACK_EFFICIENCY = "quarterback_efficiency"
+
+
+class StatsResponse(BaseModel):
+    dataset: StatsDataset
+    columns: list[str]
+    rows: list[dict[str, Any]]
+    filters: dict[str, Any]
+    metadata: dict[str, Any] | None = None

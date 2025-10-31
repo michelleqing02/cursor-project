@@ -14,19 +14,69 @@
       </header>
 
       <section class="controls">
-        <form id="question-form">
-          <input
-            type="text"
-            id="question-input"
-            name="question"
-            placeholder="e.g. What are Travis Kelce stats last season?"
-            autocomplete="off"
-            required
-          />
-          <button type="submit">Ask</button>
-        </form>
-        <button id="refresh-button" class="secondary">Refresh Data</button>
-        <p id="status-message" aria-live="polite"></p>
+        <div class="panel" id="trader-panel">
+          <h2>Trader Filters</h2>
+          <p class="panel-help">Slice official NFL, Next Gen Stats, ESPN, and PFR datasets by season, week, and team.</p>
+          <form id="filters-form" class="filters-form">
+            <div class="filters-grid">
+              <label>
+                <span>Dataset</span>
+                <select id="dataset-select" required></select>
+              </label>
+              <label>
+                <span>Season</span>
+                <select id="season-select"></select>
+              </label>
+              <label>
+                <span>Week</span>
+                <select id="week-select"></select>
+              </label>
+              <label>
+                <span>Team</span>
+                <select id="team-select"></select>
+              </label>
+              <label>
+                <span>Player</span>
+                <input id="player-filter" type="text" placeholder="e.g. Tyreek Hill" autocomplete="off" />
+              </label>
+              <label>
+                <span>Sort by</span>
+                <select id="sort-select"></select>
+              </label>
+              <label>
+                <span>Limit</span>
+                <input id="limit-input" type="number" min="1" max="500" value="50" />
+              </label>
+            </div>
+            <div class="filters-actions">
+              <button type="submit">Run Query</button>
+              <span id="stats-status" aria-live="polite"></span>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel" id="qa-panel">
+          <h2>Quick Q&amp;A</h2>
+          <form id="question-form">
+            <input
+              type="text"
+              id="question-input"
+              name="question"
+              placeholder="e.g. What are Travis Kelce stats last season?"
+              autocomplete="off"
+              required
+            />
+            <button type="submit">Ask</button>
+          </form>
+          <button id="refresh-button" class="secondary">Refresh Data</button>
+          <p id="status-message" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="stats-results" class="answer" hidden>
+        <h2>Trader Output</h2>
+        <p id="stats-summary"></p>
+        <div id="stats-table" class="table-container"></div>
       </section>
 
       <section id="answer" class="answer" hidden>

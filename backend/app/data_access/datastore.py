@@ -74,6 +74,102 @@ class DataStore:
         return pd.read_parquet(path)
 
     # ------------------------------------------------------------------
+    # Team stats storage
+    # ------------------------------------------------------------------
+    def team_stats_path(self) -> Path:
+        return self.base_dir / "team_stats.parquet"
+
+    def write_team_stats(self, records: pd.DataFrame) -> int:
+        if records.empty:
+            logger.warning("No team stat data supplied; skipping write")
+            return 0
+
+        records.to_parquet(self.team_stats_path(), index=False)
+        logger.info("Wrote %d team stat rows to %s", len(records), self.team_stats_path())
+        return len(records)
+
+    def load_team_stats(self) -> pd.DataFrame:
+        path = self.team_stats_path()
+        if not path.exists():
+            logger.warning("Team stats data file missing at %s", path)
+            return pd.DataFrame()
+        return pd.read_parquet(path)
+
+    # ------------------------------------------------------------------
+    # Advanced receiving / Next Gen stats storage
+    # ------------------------------------------------------------------
+    def ngs_receiving_path(self) -> Path:
+        return self.base_dir / "ngs_receiving.parquet"
+
+    def write_ngs_receiving(self, records: pd.DataFrame) -> int:
+        if records.empty:
+            logger.warning("No Next Gen receiving data supplied; skipping write")
+            return 0
+
+        records.to_parquet(self.ngs_receiving_path(), index=False)
+        logger.info(
+            "Wrote %d Next Gen receiving rows to %s",
+            len(records),
+            self.ngs_receiving_path(),
+        )
+        return len(records)
+
+    def load_ngs_receiving(self) -> pd.DataFrame:
+        path = self.ngs_receiving_path()
+        if not path.exists():
+            logger.warning("Next Gen receiving data file missing at %s", path)
+            return pd.DataFrame()
+        return pd.read_parquet(path)
+
+    # ------------------------------------------------------------------
+    # Pro Football Reference advanced receiving storage
+    # ------------------------------------------------------------------
+    def pfr_receiving_path(self) -> Path:
+        return self.base_dir / "pfr_advanced_receiving.parquet"
+
+    def write_pfr_receiving(self, records: pd.DataFrame) -> int:
+        if records.empty:
+            logger.warning("No PFR receiving data supplied; skipping write")
+            return 0
+
+        records.to_parquet(self.pfr_receiving_path(), index=False)
+        logger.info(
+            "Wrote %d PFR advanced receiving rows to %s",
+            len(records),
+            self.pfr_receiving_path(),
+        )
+        return len(records)
+
+    def load_pfr_receiving(self) -> pd.DataFrame:
+        path = self.pfr_receiving_path()
+        if not path.exists():
+            logger.warning("PFR advanced receiving data file missing at %s", path)
+            return pd.DataFrame()
+        return pd.read_parquet(path)
+
+    # ------------------------------------------------------------------
+    # ESPN QBR storage
+    # ------------------------------------------------------------------
+    def espn_qbr_path(self) -> Path:
+        return self.base_dir / "espn_qbr.parquet"
+
+    def write_espn_qbr(self, records: pd.DataFrame) -> int:
+        if records.empty:
+            logger.warning("No ESPN QBR data supplied; skipping write")
+            return 0
+
+        records.to_parquet(self.espn_qbr_path(), index=False)
+        logger.info("Wrote %d ESPN QBR rows to %s", len(records), self.espn_qbr_path())
+        return len(records)
+
+    def load_espn_qbr(self) -> pd.DataFrame:
+        path = self.espn_qbr_path()
+        if not path.exists():
+            logger.warning("ESPN QBR data file missing at %s", path)
+            return pd.DataFrame()
+        return pd.read_parquet(path)
+
+    # ------------------------------------------------------------------
     # Query helpers
     # ------------------------------------------------------------------
     def query_stats_by_player(self, player_name: str) -> pd.DataFrame:
