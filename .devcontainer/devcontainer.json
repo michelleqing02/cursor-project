@@ -1,0 +1,12 @@
+{
+  "name": "cursor-app",
+  "build": { "dockerfile": "Dockerfile" },
+  "postCreateCommand": "bash -lc 'sed -i \"s/nfl-data-py==0.3.5/nfl-data-py==0.3.3/\" backend/requirements.txt; sed -i \"s/pyarrow==17.0.0/pyarrow>=22/\" backend/requirements.txt; pip install -U pip && pip install -r backend/requirements.txt'",
+  "forwardPorts": [8000],
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "ms-python.vscode-pylance"],
+      "settings": { "python.defaultInterpreterPath": "/usr/local/bin/python" }
+    }
+  }
+}
