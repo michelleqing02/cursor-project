@@ -170,6 +170,28 @@ class DataStore:
         return pd.read_parquet(path)
 
     # ------------------------------------------------------------------
+    # Snap counts storage
+    # ------------------------------------------------------------------
+    def snap_counts_path(self) -> Path:
+        return self.base_dir / "snap_counts.parquet"
+
+    def write_snap_counts(self, records: pd.DataFrame) -> int:
+        if records.empty:
+            logger.warning("No snap count data supplied; skipping write")
+            return 0
+
+        records.to_parquet(self.snap_counts_path(), index=False)
+        logger.info("Wrote %d snap count rows to %s", len(records), self.snap_counts_path())
+        return len(records)
+
+    def load_snap_counts(self) -> pd.DataFrame:
+        path = self.snap_counts_path()
+        if not path.exists():
+            logger.warning("Snap count data file missing at %s", path)
+            return pd.DataFrame()
+        return pd.read_parquet(path)
+
+    # ------------------------------------------------------------------
     # Query helpers
     # ------------------------------------------------------------------
     def query_stats_by_player(self, player_name: str) -> pd.DataFrame:

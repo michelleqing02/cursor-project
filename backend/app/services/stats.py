@@ -35,6 +35,53 @@ def load_team_weekly_stats(seasons: Sequence[int] | None = None) -> pd.DataFrame
     return df
 
 
+def load_snap_counts(seasons: Sequence[int] | None = None) -> pd.DataFrame:
+    """Fetch weekly player snap counts for the requested seasons."""
+
+    settings = get_settings()
+    seasons = tuple(seasons or settings.seasons)
+    logger.info("Importing snap counts for seasons=%s", seasons)
+
+    try:
+        import nfl_data_py as nfl  # type: ignore import-not-found
+    except ImportError as exc:  # pragma: no cover - runtime guard
+        message = (
+            "The nfl_data_py package is required for snap count ingestion. "
+            "Install it with `pip install nfl-data-py`."
+        )
+        raise RuntimeError(message) from exc
+
+    df = nfl.import_snap_counts(years=list(seasons))
+    logger.info("Imported snap counts rows=%d", len(df))
+
+    if df.empty:
+        return df
+
+    rename_map = {
+        "player": "player_name",
+        "recent_team": "team",
+    }
+    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
+
+    if "player_name" not in df.columns and "player" in df.columns:
+        df = df.rename(columns={"player": "player_name"})
+
+    # Ensure key columns exist and are typed consistently
+    for column in ("season", "week"):
+        if column in df.columns:
+            df[column] = pd.to_numeric(df[column], errors="coerce").astype("Int64")
+
+    percent_cols = [col for col in df.columns if col.endswith("_pct")]
+    for column in percent_cols:
+        df[column] = pd.to_numeric(df[column], errors="coerce")
+
+    numeric_cols = [col for col in df.columns if col.endswith("_snaps")]
+    for column in numeric_cols:
+        df[column] = pd.to_numeric(df[column], errors="coerce")
+
+    return df
+
+
 def load_ngs_receiving_stats(seasons: Sequence[int] | None = None) -> pd.DataFrame:
     """Fetch Next Gen Stats receiving data filtered to the requested seasons."""
 
