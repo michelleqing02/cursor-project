@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -20,10 +20,13 @@ from .models import (
     DatasetStatus,
     QuestionAnswer,
     QuestionRequest,
+    StatsDataset,
+    StatsResponse,
 )
 from .services.props import collect_props
 from .services.question_answering import QuestionAnsweringService
 from .services.stats import load_player_weekly_stats, to_stat_records
+from .services.trader_dashboard import StatsFilterService
 
 
 settings = get_settings()
@@ -47,6 +50,7 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 QA_SERVICE: QuestionAnsweringService | None = None
+STATS_SERVICE: StatsFilterService | None = None
 
 
 def get_qa_service(datastore: DataStore = Depends(get_datastore)) -> QuestionAnsweringService:
@@ -54,6 +58,13 @@ def get_qa_service(datastore: DataStore = Depends(get_datastore)) -> QuestionAns
     if QA_SERVICE is None:
         QA_SERVICE = QuestionAnsweringService(datastore=datastore)
     return QA_SERVICE
+
+
+def get_stats_service(datastore: DataStore = Depends(get_datastore)) -> StatsFilterService:
+    global STATS_SERVICE
+    if STATS_SERVICE is None:
+        STATS_SERVICE = StatsFilterService(datastore=datastore)
+    return STATS_SERVICE
 
 
 @app.on_event("startup")
@@ -109,4 +120,43 @@ async def update_data(
     global QA_SERVICE
     QA_SERVICE = QuestionAnsweringService(datastore=datastore)
 
+    global STATS_SERVICE
+    STATS_SERVICE = StatsFilterService(datastore=datastore)
+
     return DataRefreshResponse(statuses=statuses)
+
+
+@app.get("/api/stats", response_model=StatsResponse)
+async def get_stats(
+    dataset: StatsDataset = Query(..., description="Dataset to query"),
+    season: int | None = Query(None, description="Season to filter by"),
+    week: int | None = Query(None, description="Week to filter by"),
+    team: str | None = Query(None, description="Team abbreviation"),
+    player: str | None = Query(None, description="Player name to match"),
+    limit: int | None = Query(100, ge=1, le=500, description="Maximum rows to return"),
+    sort: str | None = Query(None, description="Column to sort by"),
+    descending: bool = Query(True, description="Sort descending order"),
+    service: StatsFilterService = Depends(get_stats_service),
+) -> StatsResponse:
+    """Return filtered stats tailored for sports trading workflows."""
+
+    return service.fetch(
+        dataset,
+        season=season,
+        week=week,
+        team=team,
+        player=player,
+        limit=limit,
+        sort=sort,
+        descending=descending,
+    )
+
+
+@app.get("/api/stats/metadata")
+async def stats_metadata(
+    dataset: StatsDataset | None = Query(None, description="Dataset to describe"),
+    service: StatsFilterService = Depends(get_stats_service),
+) -> dict[str, dict[str, list]]:
+    """Expose available filters (seasons/weeks/teams) for dataset selectors."""
+
+    return service.get_metadata(dataset)

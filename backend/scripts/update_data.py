@@ -12,7 +12,14 @@ from loguru import logger
 from ..app.config import get_settings
 from ..app.data_access.datastore import DataStore
 from ..app.services.props import collect_props
-from ..app.services.stats import load_player_weekly_stats, to_stat_records
+from ..app.services.stats import (
+    load_espn_qbr,
+    load_ngs_receiving_stats,
+    load_pfr_advanced_receiving_stats,
+    load_player_weekly_stats,
+    load_team_weekly_stats,
+    to_stat_records,
+)
 
 
 async def refresh_data(
@@ -32,6 +39,23 @@ async def refresh_data(
         stat_records = list(to_stat_records(stats_df))
         stats_records_df = pd.DataFrame(record.model_dump() for record in stat_records)
         datastore.write_stats(stats_records_df)
+
+        def _ingest(description: str, loader, writer) -> None:
+            try:
+                logger.info("Collecting %s", description)
+                df = loader(seasons)
+                writer(df)
+            except Exception:  # pragma: no cover - runtime only
+                logger.exception("Failed to collect %s", description)
+
+        _ingest("team weekly stats", load_team_weekly_stats, datastore.write_team_stats)
+        _ingest("Next Gen receiving stats", load_ngs_receiving_stats, datastore.write_ngs_receiving)
+        _ingest(
+            "PFR advanced receiving stats",
+            load_pfr_advanced_receiving_stats,
+            datastore.write_pfr_receiving,
+        )
+        _ingest("ESPN QBR", load_espn_qbr, datastore.write_espn_qbr)
 
     logger.success("Data refresh completed")
 
