@@ -17,6 +17,7 @@ from ..app.services.stats import (
     load_ngs_receiving_stats,
     load_pfr_advanced_receiving_stats,
     load_player_weekly_stats,
+    load_snap_counts,
     load_team_weekly_stats,
     to_stat_records,
 )
@@ -49,6 +50,7 @@ async def refresh_data(
                 logger.exception("Failed to collect %s", description)
 
         _ingest("team weekly stats", load_team_weekly_stats, datastore.write_team_stats)
+        _ingest("snap counts", load_snap_counts, datastore.write_snap_counts)
         _ingest("Next Gen receiving stats", load_ngs_receiving_stats, datastore.write_ngs_receiving)
         _ingest(
             "PFR advanced receiving stats",

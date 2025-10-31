@@ -1,5 +1,6 @@
 const datasetOptions = [
   { value: "player", label: "Player Weekly Usage" },
+  { value: "snap_counts", label: "Snap Counts by Team" },
   { value: "team", label: "Team Efficiency" },
   { value: "receiving_efficiency", label: "Receiving Efficiency (NGS + PFR)" },
   { value: "quarterback_efficiency", label: "Quarterback Efficiency (ESPN QBR)" },

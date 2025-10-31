@@ -70,6 +70,7 @@ class StatsDataset(str, Enum):
     TEAM = "team"
     RECEIVING_EFFICIENCY = "receiving_efficiency"
     QUARTERBACK_EFFICIENCY = "quarterback_efficiency"
+    SNAP_COUNTS = "snap_counts"
 
 
 class StatsResponse(BaseModel):

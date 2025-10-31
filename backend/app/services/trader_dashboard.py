@@ -50,6 +50,7 @@ class StatsFilterService:
             StatsDataset.TEAM: self._team_metrics,
             StatsDataset.RECEIVING_EFFICIENCY: self._receiving_efficiency_metrics,
             StatsDataset.QUARTERBACK_EFFICIENCY: self._quarterback_metrics,
+            StatsDataset.SNAP_COUNTS: self._snap_count_metrics,
         }
 
         loader = loaders.get(dataset)
@@ -111,6 +112,8 @@ class StatsFilterService:
 
             seasons = sorted(frame["season"].dropna().unique().tolist()) if "season" in frame.columns else []
             weeks = sorted(frame["week"].dropna().unique().tolist()) if "week" in frame.columns else []
+            if dataset == StatsDataset.SNAP_COUNTS and weeks:
+                weeks = [week for week in weeks if isinstance(week, (int, float)) and week > 0]
             if "team" in frame.columns:
                 team_col = "team"
             elif "posteam" in frame.columns:
@@ -144,6 +147,8 @@ class StatsFilterService:
             return self.datastore.load_ngs_receiving()
         if dataset == StatsDataset.QUARTERBACK_EFFICIENCY:
             return self.datastore.load_espn_qbr()
+        if dataset == StatsDataset.SNAP_COUNTS:
+            return self.datastore.load_snap_counts()
         raise ValueError(f"Unsupported dataset: {dataset}")
 
     def _player_metrics(
@@ -246,6 +251,211 @@ class StatsFilterService:
         subset = subset.loc[:, ~subset.columns.duplicated()]
 
         return subset
+
+    def _snap_count_metrics(
+        self,
+        *,
+        season: int | None,
+        week: int | None,
+        team: str | None,
+        player: str | None,
+    ) -> pd.DataFrame:
+        snap_df = self.datastore.load_snap_counts()
+        if snap_df.empty:
+            return pd.DataFrame()
+
+        frame = snap_df.copy()
+        if "player_name" not in frame.columns and "player" in frame.columns:
+            frame = frame.rename(columns={"player": "player_name"})
+        if "team" not in frame.columns and "recent_team" in frame.columns:
+            frame = frame.rename(columns={"recent_team": "team"})
+
+        for column in ("season", "week"):
+            if column in frame.columns:
+                frame[column] = pd.to_numeric(frame[column], errors="coerce")
+
+        if season is not None and "season" in frame.columns:
+            frame = frame[frame["season"] == season]
+        if week is not None and "week" in frame.columns:
+            frame = frame[frame["week"] == week]
+        if team:
+            team_col = next((col for col in ("team", "recent_team") if col in frame.columns), None)
+            if team_col:
+                frame = frame[frame[team_col].astype(str).str.lower() == team.lower()]
+        if player:
+            name_col = next((col for col in ("player_name", "player") if col in frame.columns), None)
+            if name_col:
+                frame = frame[frame[name_col].str.contains(player, case=False, na=False)]
+
+        if frame.empty:
+            return pd.DataFrame()
+
+        if "week" in frame.columns:
+            frame = frame[frame["week"].notna()]
+            frame["week"] = frame["week"].astype(int)
+            frame = frame[frame["week"] >= 1]
+
+        if frame.empty:
+            return pd.DataFrame()
+
+        percent_cols = [col for col in frame.columns if col.endswith("_pct")]
+        for column in percent_cols:
+            frame[column] = pd.to_numeric(frame[column], errors="coerce")
+
+        numeric_cols = [col for col in frame.columns if col.endswith("_snaps")]
+        for column in numeric_cols:
+            frame[column] = pd.to_numeric(frame[column], errors="coerce")
+
+        if week is not None:
+            return self._format_weekly_snap_counts(frame)
+        return self._format_multiweek_snap_counts(frame)
+
+    def _format_weekly_snap_counts(self, frame: pd.DataFrame) -> pd.DataFrame:
+        columns = [
+            "season",
+            "week",
+            "team",
+            "player_name",
+            "position",
+            "offense_snaps",
+            "offense_pct",
+            "defense_snaps",
+            "defense_pct",
+            "special_teams_snaps",
+            "special_teams_pct",
+        ]
+        existing = [col for col in columns if col in frame.columns]
+        if not existing:
+            return pd.DataFrame()
+
+        weekly = frame[existing].copy()
+        percent_cols = [col for col in weekly.columns if col.endswith("_pct")]
+        for column in percent_cols:
+            weekly[column] = weekly[column].apply(self._normalize_pct)
+
+        sort_key = "offense_pct" if "offense_pct" in weekly.columns else None
+        if sort_key:
+            weekly = weekly.sort_values(by=sort_key, ascending=False, na_position="last")
+
+        weekly = weekly.reset_index(drop=True)
+
+        for column in percent_cols:
+            weekly[column] = weekly[column].apply(self._format_pct_label)
+
+        return weekly
+
+    def _format_multiweek_snap_counts(self, frame: pd.DataFrame) -> pd.DataFrame:
+        if "offense_snaps" not in frame.columns or "offense_pct" not in frame.columns:
+            return frame
+
+        weeks = sorted({int(week) for week in frame["week"].dropna().unique().tolist()})
+        index_cols: list[str] = []
+        if "position" in frame.columns:
+            index_cols.append("position")
+        index_cols.append("player_name")
+
+        grouped = (
+            frame.groupby(index_cols, dropna=False)
+            .agg(
+                team=("team", self._first_non_null),
+                total_offense_snaps=("offense_snaps", "sum"),
+                avg_offense_pct=("offense_pct", "mean"),
+                games_played=("week", lambda s: int(s.dropna().nunique())),
+            )
+        )
+
+        counts_pivot = frame.pivot_table(
+            index=index_cols,
+            columns="week",
+            values="offense_snaps",
+            aggfunc="sum",
+            fill_value=0,
+        )
+        pct_pivot = frame.pivot_table(
+            index=index_cols,
+            columns="week",
+            values="offense_pct",
+            aggfunc="mean",
+        )
+
+        combined_rows: list[dict[str, object]] = []
+        for idx, data in grouped.iterrows():
+            if isinstance(idx, tuple):
+                if len(index_cols) == 2:
+                    position, player_name = idx
+                else:
+                    position = None
+                    player_name = idx[0]
+            else:
+                position = None
+                player_name = idx
+
+            row: dict[str, object] = {}
+            if "position" in index_cols:
+                row["position"] = position or ""
+            row["player_name"] = player_name
+            row["team"] = data.get("team") or ""
+            row["games_played"] = int(data.get("games_played") or 0)
+
+            total_snaps = data.get("total_offense_snaps")
+            row["total_offense_snaps"] = int(total_snaps) if pd.notna(total_snaps) else 0
+
+            avg_pct = self._normalize_pct(data.get("avg_offense_pct"))
+            row["avg_offense_pct"] = round(avg_pct, 1) if avg_pct is not None else None
+
+            try:
+                counts_row = counts_pivot.loc[idx]
+            except KeyError:
+                counts_row = pd.Series(dtype=float)
+            if not isinstance(counts_row, pd.Series):
+                counts_row = pd.Series({weeks[0]: counts_row}) if weeks else pd.Series(dtype=float)
+
+            try:
+                pct_row = pct_pivot.loc[idx]
+            except KeyError:
+                pct_row = pd.Series(dtype=float)
+            if not isinstance(pct_row, pd.Series):
+                pct_row = pd.Series({weeks[0]: pct_row}) if weeks else pd.Series(dtype=float)
+
+            for week in weeks:
+                column_name = f"wk_{week}"
+                snaps_value = counts_row.get(week, pd.NA)
+                pct_value = pct_row.get(week, pd.NA)
+                row[column_name] = self._format_snap_cell(snaps_value, pct_value)
+
+            combined_rows.append(row)
+
+        result = pd.DataFrame(combined_rows)
+        if result.empty:
+            return result
+
+        base_columns: list[str] = []
+        if "position" in result.columns:
+            base_columns.append("position")
+        base_columns.extend([
+            "player_name",
+            "team",
+            "games_played",
+            "total_offense_snaps",
+            "avg_offense_pct",
+        ])
+        week_columns = [f"wk_{week}" for week in weeks]
+        ordered = [col for col in base_columns + week_columns if col in result.columns]
+        result = result[ordered]
+
+        if "avg_offense_pct" in result.columns:
+            result = result.sort_values(by="avg_offense_pct", ascending=False, na_position="last")
+        elif "total_offense_snaps" in result.columns:
+            result = result.sort_values(by="total_offense_snaps", ascending=False, na_position="last")
+
+        result = result.reset_index(drop=True)
+
+        if "avg_offense_pct" in result.columns:
+            result["avg_offense_pct"] = result["avg_offense_pct"].apply(
+                lambda value: self._format_pct_label(value) if value is not None else None
+            )
+
+        return result
 
     def _receiving_efficiency_metrics(
         self,
@@ -449,6 +659,39 @@ class StatsFilterService:
     # ------------------------------------------------------------------
     # Sorting helpers
     # ------------------------------------------------------------------
+    @staticmethod
+    def _normalize_pct(value: float | int | None) -> float | None:
+        if value is None or pd.isna(value):
+            return None
+        pct = float(value)
+        if pct <= 1:
+            pct *= 100
+        return pct
+
+    @staticmethod
+    def _format_pct_label(value: float | None) -> str | None:
+        if value is None or pd.isna(value):
+            return None
+        return f"{float(value):.1f}%"
+
+    @staticmethod
+    def _format_snap_cell(snaps: float | int | None, pct_value: float | int | None) -> str:
+        parts: list[str] = []
+        if snaps is not None and not pd.isna(snaps):
+            snaps_int = int(round(float(snaps)))
+            parts.append(str(snaps_int))
+        pct_normalized = StatsFilterService._normalize_pct(pct_value)
+        if pct_normalized is not None:
+            parts.append(f"{pct_normalized:.0f}%")
+        return "\n".join(parts) if parts else ""
+
+    @staticmethod
+    def _first_non_null(series: pd.Series) -> str | None:
+        for value in series:
+            if pd.notna(value):
+                return value
+        return None
+
     def _apply_default_sort(self, dataset: StatsDataset, frame: pd.DataFrame) -> pd.DataFrame:
         key = self._default_sort_key(dataset, frame)
         if key and key in frame.columns:
@@ -462,6 +705,7 @@ class StatsFilterService:
             StatsDataset.TEAM: ["total_yards", "points_for"],
             StatsDataset.RECEIVING_EFFICIENCY: ["yards_per_catch", "receiving_yards"],
             StatsDataset.QUARTERBACK_EFFICIENCY: ["total_qbr", "raw_qbr"],
+            StatsDataset.SNAP_COUNTS: ["avg_offense_pct", "total_offense_snaps"],
         }
         for candidate in priorities.get(dataset, []):
             if candidate in frame.columns:

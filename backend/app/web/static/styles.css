@@ -225,6 +225,7 @@ td {
   padding: 12px 14px;
   text-align: left;
   border-bottom: 1px solid rgba(240, 246, 252, 0.08);
+  white-space: pre-line;
 }
 
 tbody tr:hover {

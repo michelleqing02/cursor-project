@@ -25,7 +25,7 @@ from .models import (
 )
 from .services.props import collect_props
 from .services.question_answering import QuestionAnsweringService
-from .services.stats import load_player_weekly_stats, to_stat_records
+from .services.stats import load_player_weekly_stats, load_snap_counts, to_stat_records
 from .services.trader_dashboard import StatsFilterService
 
 
@@ -115,6 +115,14 @@ async def update_data(
         except Exception as exc:  # pragma: no cover - runtime only
             logger.exception("Stats refresh failed")
             statuses.append(DatasetStatus(dataset="player_stats", records=0, message=str(exc)))
+
+        try:
+            snap_counts_df = load_snap_counts(seasons)
+            snap_count_records = datastore.write_snap_counts(snap_counts_df)
+            statuses.append(DatasetStatus(dataset="snap_counts", records=snap_count_records))
+        except Exception as exc:  # pragma: no cover - runtime only
+            logger.exception("Snap count refresh failed")
+            statuses.append(DatasetStatus(dataset="snap_counts", records=0, message=str(exc)))
 
     # Reset QA service with fresh indices
     global QA_SERVICE
