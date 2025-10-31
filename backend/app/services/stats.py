@@ -10,95 +10,50 @@ from loguru import logger
 
 from ..config import get_settings
 from ..models import PlayerStatRecord
-
-
-try:  # Optional import: nfl_data_py pulls large deps
-    import nfl_data_py as nfl
-except ModuleNotFoundError:  # pragma: no cover - handled at runtime
-    nfl = None  # type: ignore
-
-
-def _call_import(function_names: Sequence[str], *args, **kwargs) -> pd.DataFrame:
-    """Call the first available nfl_data_py import function from the list."""
-
-    if nfl is None:
-        msg = "nfl_data_py not installed. Please install dependencies via requirements.txt."
-        logger.error(msg)
-        raise RuntimeError(msg)
-
-    for name in function_names:
-        func = getattr(nfl, name, None)
-        if func is None:
-            continue
-        logger.debug("Using nfl_data_py.%s for dataset import", name)
-        return func(*args, **kwargs)
-
-    msg = f"None of the importers {function_names} exist in nfl_data_py=={getattr(nfl, '__version__', 'unknown')}"
-    logger.error(msg)
-    raise RuntimeError(msg)
+from .nfl_scraper import scrape_player_stats, scrape_team_stats
 
 
 def load_player_weekly_stats(seasons: Sequence[int] | None = None) -> pd.DataFrame:
     """Fetch weekly player stats for the requested seasons."""
 
-    seasons = seasons or get_settings().seasons
-    logger.info("Importing weekly player data for seasons=%s", seasons)
-    df = _call_import(["import_player_weekly_data"], list(seasons))
-    logger.info("Loaded %d weekly rows", len(df))
+    settings = get_settings()
+    seasons = tuple(seasons or settings.seasons)
+    logger.info("Scraping player stats for seasons=%s", seasons)
+    df = scrape_player_stats(seasons, timeout=settings.http_timeout)
+    logger.info("Scraped player stats rows=%d", len(df))
     return df
 
 
 def load_team_weekly_stats(seasons: Sequence[int] | None = None) -> pd.DataFrame:
     """Fetch weekly team-level stats."""
 
-    seasons = seasons or get_settings().seasons
-    logger.info("Importing weekly team data for seasons=%s", seasons)
-    df = _call_import(["import_team_weekly_data"], list(seasons))
-    logger.info("Loaded %d team weekly rows", len(df))
+    settings = get_settings()
+    seasons = tuple(seasons or settings.seasons)
+    logger.info("Scraping team stats for seasons=%s", seasons)
+    df = scrape_team_stats(seasons, timeout=settings.http_timeout)
+    logger.info("Scraped team stats rows=%d", len(df))
     return df
 
 
 def load_ngs_receiving_stats(seasons: Sequence[int] | None = None) -> pd.DataFrame:
     """Fetch Next Gen Stats receiving data filtered to the requested seasons."""
 
-    seasons = seasons or get_settings().seasons
-    logger.info("Importing Next Gen receiving data for seasons=%s", seasons)
-    df = _call_import(["import_ngs_receiving_data", "import_ngs_receiving"])
-    if "season" in df.columns:
-        df = df[df["season"].isin(seasons)]
-        logger.debug("Filtered NGS receiving data down to %d rows", len(df))
-    else:
-        logger.warning("NGS receiving dataset missing 'season' column; returning full dataset")
-    return df.reset_index(drop=True)
+    logger.info("Next Gen Stats receiving scraping not implemented; returning empty DataFrame")
+    return pd.DataFrame()
 
 
 def load_pfr_advanced_receiving_stats(seasons: Sequence[int] | None = None) -> pd.DataFrame:
     """Fetch Pro Football Reference advanced receiving data."""
 
-    seasons = seasons or get_settings().seasons
-    logger.info("Importing PFR advanced receiving data for seasons=%s", seasons)
-    df = _call_import([
-        "import_pfr_advanced_receiving_stats",
-        "import_pfr_advanced_receiving",
-    ])
-    if "season" in df.columns:
-        df = df[df["season"].isin(seasons)]
-        logger.debug("Filtered PFR receiving data down to %d rows", len(df))
-    else:
-        logger.warning("PFR advanced receiving dataset missing 'season' column; returning full dataset")
-    return df.reset_index(drop=True)
+    logger.info("PFR advanced receiving scraping not implemented; returning empty DataFrame")
+    return pd.DataFrame()
 
 
 def load_espn_qbr(seasons: Sequence[int] | None = None) -> pd.DataFrame:
     """Fetch ESPN QBR data for quarterback efficiency."""
 
-    seasons = seasons or get_settings().seasons
-    logger.info("Importing ESPN QBR data for seasons=%s", seasons)
-    df = _call_import(["import_espn_qbr"])
-    if "season" in df.columns:
-        df = df[df["season"].isin(seasons)]
-        logger.debug("Filtered ESPN QBR data down to %d rows", len(df))
-    return df.reset_index(drop=True)
+    logger.info("ESPN QBR scraping not implemented; returning empty DataFrame")
+    return pd.DataFrame()
 
 
 def to_stat_records(df: pd.DataFrame) -> Iterable[PlayerStatRecord]:
@@ -111,7 +66,8 @@ def to_stat_records(df: pd.DataFrame) -> Iterable[PlayerStatRecord]:
     stat_columns = [
         col
         for col in df.columns
-        if pd.api.types.is_numeric_dtype(df[col]) and col not in {"season", "week"}
+        if pd.api.types.is_numeric_dtype(df[col])
+        and col not in {"season", "week", "team", "team_abbr", "opponent"}
     ]
 
     for _, row in df.iterrows():
@@ -120,7 +76,7 @@ def to_stat_records(df: pd.DataFrame) -> Iterable[PlayerStatRecord]:
             continue
         season = int(row.get("season")) if row.get("season") else None
         week = int(row.get("week")) if row.get("week") else None
-        team = row.get("recent_team")
+        team = row.get("recent_team") or row.get("team")
         opponent = row.get("opponent")
 
         for column in stat_columns:
