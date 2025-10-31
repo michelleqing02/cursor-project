@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NFL Prop Data Trader</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>NFL Prop Data Trader</h1>
+        <p>Ask a question about NFL props or player stats to surface actionable data.</p>
+      </header>
+
+      <section class="controls">
+        <form id="question-form">
+          <input
+            type="text"
+            id="question-input"
+            name="question"
+            placeholder="e.g. What are Travis Kelce stats last season?"
+            autocomplete="off"
+            required
+          />
+          <button type="submit">Ask</button>
+        </form>
+        <button id="refresh-button" class="secondary">Refresh Data</button>
+        <p id="status-message" aria-live="polite"></p>
+      </section>
+
+      <section id="answer" class="answer" hidden>
+        <h2>Answer</h2>
+        <p id="answer-text"></p>
+        <div id="answer-table" class="table-container"></div>
+      </section>
+    </main>
+
+    <script src="/static/app.js" type="module"></script>
+  </body>
+</html>
