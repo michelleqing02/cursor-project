@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Name Art Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bungee&family=Concert+One&family=Inter:wght@400;600&family=Monoton&family=Orbitron:wght@600&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="intro">
+        <header class="hero">
+          <h1>Name Art Forge</h1>
+          <p>
+            Type your name, tap forge, and watch it transform into vivid, stylized
+            art.
+          </p>
+        </header>
+
+        <form id="name-form" class="controls" autocomplete="off">
+          <label for="name-input">Your name</label>
+          <div class="input-row">
+            <input
+              id="name-input"
+              name="name"
+              type="text"
+              maxlength="32"
+              placeholder="Ada Lovelace"
+              required
+            />
+            <button type="submit" class="primary">Forge art</button>
+            <button type="button" id="shuffle-button" class="secondary">
+              Shuffle style
+            </button>
+          </div>
+          <p class="helper">Press enter or tap to forge. Each forge yields a fresh style.</p>
+        </form>
+      </section>
+
+      <section class="art-stage">
+        <canvas id="art-canvas" width="900" height="420"></canvas>
+        <div class="download-bar">
+          <span class="tip">Like it? Save your masterpiece.</span>
+          <button type="button" id="download-button" class="ghost">
+            Download PNG
+          </button>
+        </div>
+      </section>
+
+      <footer class="footnote">
+        <p>Built with gradients, glows, and a love for typographic flair.</p>
+      </footer>
+    </main>
+
+    <script src="./script.js" defer></script>
+  </body>
+</html>
