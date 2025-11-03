@@ -2,61 +2,81 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Name Art Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Onboarder</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bungee&family=Concert+One&family=Inter:wght@400;600&family=Monoton&family=Orbitron:wght@600&family=Press+Start+2P&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <section class="intro">
-        <header class="hero">
-          <h1>Name Art Forge</h1>
-          <p>
-            Type your name, tap forge, and watch it transform into vivid, stylized
-            art.
-          </p>
-        </header>
-
-        <form id="name-form" class="controls" autocomplete="off">
-          <label for="name-input">Your name</label>
-          <div class="input-row">
-            <input
-              id="name-input"
-              name="name"
-              type="text"
-              maxlength="32"
-              placeholder="Ada Lovelace"
-              required
-            />
-            <button type="submit" class="primary">Forge art</button>
-            <button type="button" id="shuffle-button" class="secondary">
-              Shuffle style
-            </button>
+    <main class="onboarder">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-card">
+          <div class="mascot" aria-hidden="true">
+            <span class="mascot-cap">FD</span>
+            <span class="mascot-face"></span>
           </div>
-          <p class="helper">Press enter or tap to forge. Each forge yields a fresh style.</p>
-        </form>
-      </section>
+          <h1 id="hero-title">The Onboarder</h1>
+          <p class="hero-lede">
+            Streamline your trading-team onboarding experience with our beautiful,
+            intuitive guide.
+          </p>
 
-      <section class="art-stage">
-        <canvas id="art-canvas" width="900" height="420"></canvas>
-        <div class="download-bar">
-          <span class="tip">Like it? Save your masterpiece.</span>
-          <button type="button" id="download-button" class="ghost">
-            Download PNG
-          </button>
+          <form id="search-form" class="search" autocomplete="off" role="search">
+            <label class="sr-only" for="search-input">Ask about trading team expectations</label>
+            <div class="search-field">
+              <span class="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false" role="img">
+                  <path
+                    d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.71.71l.27.28v.79l5 5 1.5-1.5-5-5Zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z"
+                  ></path>
+                </svg>
+              </span>
+              <input
+                id="search-input"
+                type="search"
+                name="query"
+                placeholder="What is DA?"
+                aria-describedby="search-help"
+              />
+            </div>
+            <button type="submit" class="cta">
+              Start Onboarding
+              <span class="arrow" aria-hidden="true">→</span>
+            </button>
+          </form>
+          <p id="search-help" class="hero-note">
+            Start to see every expectation step-by-step, or search to jump straight to an answer.
+          </p>
         </div>
       </section>
 
-      <footer class="footnote">
-        <p>Built with gradients, glows, and a love for typographic flair.</p>
-      </footer>
+      <section class="content" aria-labelledby="content-title">
+        <div class="content-header">
+          <h2 id="content-title">Trading Team Expectations</h2>
+          <p class="content-lede">
+            Explore the must-knows for start times, communication, staying informed, office etiquette, and more.
+          </p>
+        </div>
+        <div class="content-body">
+          <aside class="toc" aria-label="Section shortcuts">
+            <ul id="section-nav"></ul>
+          </aside>
+          <article id="sections" class="sections" aria-live="polite"></article>
+        </div>
+      </section>
     </main>
+
+    <template id="section-template">
+      <section class="section-card">
+        <h3 class="section-title"></h3>
+        <div class="section-body"></div>
+      </section>
+    </template>
 
     <script src="./script.js" defer></script>
   </body>
