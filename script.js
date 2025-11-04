@@ -1,255 +1,474 @@
-const form = document.querySelector('#name-form');
-const input = document.querySelector('#name-input');
-const shuffleButton = document.querySelector('#shuffle-button');
-const downloadButton = document.querySelector('#download-button');
-const canvas = document.querySelector('#art-canvas');
-const ctx = canvas.getContext('2d');
-
-const fontFamilies = [
-  '"Monoton", cursive',
-  '"Bungee", cursive',
-  '"Concert One", sans-serif',
-  '"Orbitron", sans-serif',
-  '"Press Start 2P", cursive'
-];
-
-const palettes = [
+const sectionsData = [
   {
-    name: 'Aurora',
-    background: ['#061728', '#0d2a3d', '#143f5d'],
-    text: ['#00f5d4', '#00bbf9', '#fe53bb'],
-    sparks: ['#ffbf69', '#f5f5f5']
+    id: 'start-times-hours',
+    title: 'Start Times & Hours',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'Expect occasional longer shifts when games go to overtime, extra innings, or experience delays. Finish the trading session if you can stay.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Take back the extra time at your next opportunity by starting a later shift or stepping away on an IN shift.',
+          'Update your shift time in Teams and let colleagues know when you adjust coverage.',
+          'If you have a hard stop, communicate early and hand over responsibly.'
+        ]
+      },
+      {
+        type: 'paragraph',
+        text: 'Full schedule specifics live in the scheduling guide, but the expectation is that flexibility is a shared team effort.'
+      }
+    ]
   },
   {
-    name: 'Neon Sunset',
-    background: ['#1a0b2e', '#42047e', '#07f49e'],
-    text: ['#ff61d2', '#fe9090', '#fecf33'],
-    sparks: ['#ffffff', '#ffd6ff']
+    id: 'start-ready',
+    title: 'Being Ready at Start Time',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'If you are scheduled at 8:00 a.m., be logged in and ready to trade at 8:00 a.m., not still setting up.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Give yourself 10-15 minutes before the shift if you need to catch up from the prior day.',
+          'If that prep time stacks up into an hour of extra effort over a week, feel free to reclaim it later.',
+          'After five or more days away, we try to schedule an IN shift to help you reset, although it is not always possible.'
+        ]
+      }
+    ]
   },
   {
-    name: 'Solar Flare',
-    background: ['#160f30', '#472783', '#f88c24'],
-    text: ['#ffe066', '#ff5f6d', '#ffc371'],
-    sparks: ['#fff9c4', '#ffadad']
+    id: 'role-expectations',
+    title: 'Role-Based Expectations',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'Leaders, sport owners, and trading managers often keep longer hours or take global calls outside their scheduled shifts.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Their wider communication responsibilities mean earlier starts or later evenings.',
+          'These expectations come with higher-level compensation and fewer weekend shifts to balance the load.',
+          'New starters are not expected to mirror these extended hours.'
+        ]
+      }
+    ]
   },
   {
-    name: 'Cyber Dreams',
-    background: ['#050505', '#09203f', '#1e3c72'],
-    text: ['#a8ff78', '#78ffd6', '#00d4ff'],
-    sparks: ['#ffffff', '#b3f8ff']
+    id: 'off-hours',
+    title: 'Off-Hours Boundaries',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'You are not expected to check Slack or email outside rostered hours as a new starter.'
+      },
+      {
+        type: 'list',
+        items: [
+          'No requirement to install Slack or Outlook on your phone or to answer calls on days off.',
+          'If your role evolves, expectations may shift alongside compensation changes.',
+          'Enjoy your time off guilt-free; staying plugged in is optional.'
+        ]
+      }
+    ]
   },
   {
-    name: 'Candy Pulse',
-    background: ['#320d3e', '#641b4e', '#f55951'],
-    text: ['#ff85a1', '#ffd4d4', '#ffe066'],
-    sparks: ['#faf3dd', '#fcbf49']
+    id: 'lunch-breaks',
+    title: 'Lunch Breaks',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'Weekday lunch breaks can be away from the desk when you are not live trading.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Aim for around 30 minutes, but a little longer is fine as long as coverage is clear.',
+          'Stagger lunch times so everyone working the same sport is not away at once.',
+          'Use the kitchen, head outside, or hit the restaurant, whatever works best.',
+          'On weekends, eat at your desk; we cover weekend lunch for that reason.',
+          'Always let teammates know when you are stepping away and when you will be back.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'signing-on',
+    title: 'Signing On & Off',
+    body: [
+      {
+        type: 'paragraph',
+        text: "Kick off the day with a hello in the #natt Slack channel's Morning Thread and make yourself active."
+      },
+      {
+        type: 'list',
+        items: [
+          'Reply to the thread as you log on so teammates know you are available.',
+          'Mute the thread if the notifications get noisy by using the three-dot menu.',
+          'End of day, add a quick sign-off message so the team knows you are done.',
+          'Link your Slack and Outlook so out-of-office calendar events automatically update your Slack status.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'catching-up',
+    title: 'Catching Up Before a Shift',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'Before every operational shift, align on the latest information.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Read the handover for your sport from Melbourne overnight.',
+          "Review messages in your sport's trading channel and #fanduel-trading.",
+          'Listen in on the 11:00 a.m. ET admin shift summary.',
+          'For live trading, skim the live trading callouts channel for real-time updates.',
+          'Optional but helpful: read overnight risk handovers, admin notes, and wider channel summaries.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'staying-informed',
+    title: 'Staying Informed',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'Company-wide sessions keep everyone up to date on business moves.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Attend Sports All Hands or company Town Halls when you are working.',
+          'Trading leaders share notes so you can catch up if you miss a session.',
+          'Review those notes or recordings when you have time, even if you were off that day.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'office-etiquette',
+    title: 'Office Etiquette',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'Respect our hot-desking setup and keep the shared office comfortable for everyone.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Tidy your space and clean up after meals; use recycling bins properly.',
+          'Any PC can be accessed with your Okta credentials; docking stations are plug-and-play.',
+          'Snacks and drinks are for everyone; please avoid stockpiling, especially alcohol.',
+          'Dispose of weekend catering packaging promptly.',
+          'Keep desks clear so the next person has a fresh space.',
+          'First aid supplies are in the kitchen if needed.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'sick-days',
+    title: 'Sick Days',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'You begin each calendar year with 80 hours (10 days) of sick leave.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Message your manager, or another leader if they are away, as soon as you know you are out so coverage can be arranged.',
+          'Log sick days in Dayforce as weekdays, even if the absence was on a weekend.',
+          "If you use all 10 days, provide a doctor's certificate; no one has been denied sick leave so far.",
+          'For absences longer than five consecutive days, the benefits team must be notified (no extra action required from you).',
+          'Check the Trading HR page for additional wellbeing support.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'whatsapp',
+    title: 'Trading WhatsApp Group',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'A dedicated WhatsApp group supports urgent coverage needs.'
+      },
+      {
+        type: 'list',
+        items: [
+          'It is used for emergencies such as last-minute trading coverage.',
+          'Download WhatsApp and ask to be added so you can receive critical alerts.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'module-completion',
+    title: 'Training Module Completion',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'Completing assigned trading modules on time is part of your annual goals.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Find modules in Okta under Training Camp and finish them by the stated due date.',
+          'Overdue modules can suspend your access to trading tools and create regulatory risk.',
+          'You will receive email reminders; leaders also post due dates in calls and on the #natt Canvas.',
+          'Check for upcoming deadlines before going on vacation and complete anything due while you are away.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'dge-license',
+    title: 'DGE License',
+    body: [
+      {
+        type: 'paragraph',
+        text: 'All traders must obtain their New Jersey DGE license.'
+      },
+      {
+        type: 'list',
+        items: [
+          'Email fdglicensing@fanduel.com to start the process and ask your manager for next steps.',
+          'Expect to visit the DGE office in Atlantic City; travel, lodging, and meals are covered.',
+          'Car pool with teammates if possible; time spent counts as a paid workday.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'employee-play',
+    title: 'Employee Play Policy',
+    body: [
+      {
+        type: 'paragraph',
+        text: "Adhere to FanDuel's employee play policy to avoid regulatory issues."
+      },
+      {
+        type: 'list',
+        items: [
+          'Review the Employee Play Map and full policy to see where and with whom you can bet.',
+          'New Jersey traders may place bets, but DraftKings usage is prohibited under the DGE license.',
+          'Track your personal betting activity to stay responsible and aware of results.',
+          'Use the #employee-play-inquiries Slack channel when you have questions.'
+        ]
+      }
+    ]
   }
 ];
 
-let lastName = 'Ada Lovelace';
-let lastSeed = Math.random();
+const searchForm = document.querySelector('#search-form');
+const searchInput = document.querySelector('#search-input');
+const heroNote = document.querySelector('.hero-note');
+const defaultHeroNote = heroNote?.textContent.trim() ?? '';
+const sectionsContainer = document.querySelector('#sections');
+const navList = document.querySelector('#section-nav');
+const template = document.querySelector('#section-template');
 
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+let observer;
+let activeSectionId = sectionsData[0]?.id ?? '';
 
-function rngFromSeed(seed) {
-  let t = Math.floor(seed * 2147483647) || 1;
-  return function () {
-    t ^= t << 13;
-    t ^= t >>> 17;
-    t ^= t << 5;
-    return ((t < 0 ? ~t + 1 : t) % 2147483647) / 2147483647;
-  };
-}
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-function pick(array, rng) {
-  return array[Math.floor(rng() * array.length)];
-}
+const applyHighlight = (text, query) => {
+  if (!query) {
+    return text;
+  }
+  const safe = escapeRegExp(query.trim());
+  if (!safe) {
+    return text;
+  }
+  const regex = new RegExp(`(${safe})`, 'gi');
+  return text.replace(regex, '<mark class="highlight">$1</mark>');
+};
 
-function fitCanvas(baseWidth, baseHeight) {
-  const ratio = window.devicePixelRatio || 1;
-  const width = Math.round(baseWidth);
-  const height = Math.round(baseHeight);
+sectionsData.forEach((section) => {
+  const searchableFragments = section.body.flatMap((block) => {
+    if (block.type === 'paragraph') {
+      return block.text;
+    }
+    if (block.type === 'list') {
+      return block.items;
+    }
+    if (block.type === 'heading') {
+      return block.text;
+    }
+    return '';
+  });
+  section.searchText = [section.title, ...searchableFragments].join(' ').toLowerCase();
+});
 
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-  canvas.width = width * ratio;
-  canvas.height = height * ratio;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.scale(ratio, ratio);
-}
+const renderNav = () => {
+  navList.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  sectionsData.forEach((section, index) => {
+    const item = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.sectionId = section.id;
+    button.textContent = section.title;
+    if (index === 0) {
+      button.classList.add('is-active');
+    }
+    button.addEventListener('click', () => {
+      const target = document.getElementById(section.id);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        activeSectionId = section.id;
+        updateNavActive();
+      }
+    });
+    item.appendChild(button);
+    fragment.appendChild(item);
+  });
+  navList.appendChild(fragment);
+};
 
-function paintBackground(rng, palette, width, height) {
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  palette.background.forEach((color, idx) => {
-    gradient.addColorStop(idx / (palette.background.length - 1 || 1), color);
+const renderSections = ({ query = '' } = {}) => {
+  const normalized = query.trim().toLowerCase();
+  sectionsContainer.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  let matches = 0;
+
+  sectionsData.forEach((section) => {
+    const isMatch = normalized ? section.searchText.includes(normalized) : false;
+    if (isMatch) {
+      matches += 1;
+    }
+
+    const clone = template.content.cloneNode(true);
+    const card = clone.querySelector('.section-card');
+    const title = clone.querySelector('.section-title');
+    const body = clone.querySelector('.section-body');
+
+    card.id = section.id;
+    if (isMatch) {
+      card.classList.add('is-match');
+    }
+
+    title.textContent = section.title;
+
+    section.body.forEach((block) => {
+      if (block.type === 'paragraph') {
+        const p = document.createElement('p');
+        p.innerHTML = applyHighlight(block.text, query);
+        body.appendChild(p);
+      }
+
+      if (block.type === 'heading') {
+        const h4 = document.createElement('h4');
+        h4.textContent = block.text;
+        body.appendChild(h4);
+      }
+
+      if (block.type === 'list') {
+        const ul = document.createElement('ul');
+        block.items.forEach((item) => {
+          const li = document.createElement('li');
+          li.innerHTML = applyHighlight(item, query);
+          ul.appendChild(li);
+        });
+        body.appendChild(ul);
+      }
+    });
+
+    fragment.appendChild(clone);
   });
 
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  sectionsContainer.appendChild(fragment);
+  setupObserver();
+  return matches;
+};
 
-  const layers = 4 + Math.floor(rng() * 3);
-  for (let i = 0; i < layers; i += 1) {
-    const hueShift = 20 + rng() * 80;
-    const alpha = 0.08 + rng() * 0.12;
-    const radius = (Math.min(width, height) / 2) * (0.4 + rng() * 0.8);
-    const x = width * (0.1 + rng() * 0.8);
-    const y = height * (0.1 + rng() * 0.8);
+const updateNavActive = () => {
+  const buttons = navList.querySelectorAll('button');
+  buttons.forEach((button) => {
+    button.classList.toggle('is-active', button.dataset.sectionId === activeSectionId);
+  });
+};
 
-    const circleGradient = ctx.createRadialGradient(
-      x,
-      y,
-      radius * 0.15,
-      x,
-      y,
-      radius
-    );
-
-    circleGradient.addColorStop(0, `hsla(${hueShift}, 90%, 70%, ${alpha})`);
-    circleGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = circleGradient;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+const setupObserver = () => {
+  if (observer) {
+    observer.disconnect();
   }
-}
 
-function renderName(name, rng, palette, width, height) {
-  const trimmed = name.trim();
-  const fontFamily = pick(fontFamilies, rng);
-  const baseSize = clamp(width / (trimmed.length * 0.7), 92, 210);
-  const rotation = (rng() - 0.5) * 0.05; // subtle tilt
-
-  const textGradient = ctx.createLinearGradient(
-    width * 0.2,
-    height * 0.3,
-    width * 0.8,
-    height * 0.7
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          activeSectionId = entry.target.id;
+        }
+      });
+      updateNavActive();
+    },
+    {
+      root: null,
+      threshold: 0,
+      rootMargin: '-50% 0px -50% 0px'
+    }
   );
-  palette.text.forEach((color, index) => {
-    textGradient.addColorStop(index / (palette.text.length - 1 || 1), color);
-  });
 
-  ctx.save();
-  ctx.translate(width / 2, height / 2);
-  ctx.rotate(rotation);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.lineJoin = 'round';
+  document.querySelectorAll('.section-card').forEach((card) => observer.observe(card));
+};
 
-  ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
-  ctx.shadowBlur = 35 + rng() * 25;
-  ctx.shadowOffsetY = 6;
+const scrollToFirstMatch = () => {
+  const match = document.querySelector('.section-card.is-match');
+  if (match) {
+    match.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return true;
+  }
+  const first = document.querySelector('.section-card');
+  if (first) {
+    first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  return false;
+};
 
-  ctx.font = `${baseSize}px ${fontFamily}`;
-  ctx.fillStyle = textGradient;
-  ctx.fillText(trimmed, 0, 0);
+const handleSearch = (event) => {
+  event.preventDefault();
+  const rawQuery = searchInput.value.trim();
 
-  ctx.shadowBlur = 0;
-  ctx.lineWidth = clamp(baseSize * 0.04, 3, 12);
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.38)';
-  ctx.strokeText(trimmed, 0, 0);
-
-  // Emboss highlight
-  ctx.globalCompositeOperation = 'screen';
-  ctx.lineWidth = clamp(baseSize * 0.015, 1.5, 6);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-  ctx.strokeText(trimmed, -baseSize * 0.01, -baseSize * 0.01);
-
-  ctx.restore();
-}
-
-function sprinkleSparks(rng, palette, width, height) {
-  const count = 64 + Math.floor(rng() * 86);
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-
-  for (let i = 0; i < count; i += 1) {
-    const x = rng() * width;
-    const y = rng() * height;
-    const size = 0.5 + rng() * 2.8;
-    const color = pick(palette.sparks, rng);
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.4 + rng() * 0.6;
-    ctx.beginPath();
-    ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.fill();
+  if (!rawQuery) {
+    renderSections();
+    heroNote.textContent = defaultHeroNote;
+    scrollToFirstMatch();
+    return;
   }
 
-  ctx.restore();
-}
-
-function drawScanlines(width, height) {
-  const lineHeight = 3;
-  const alpha = 0.04;
-
-  ctx.save();
-  ctx.globalCompositeOperation = 'soft-light';
-  ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-  for (let y = 0; y < height; y += lineHeight) {
-    ctx.fillRect(0, y, width, 1);
-  }
-  ctx.restore();
-}
-
-function forgeNameArt(name, seed = Math.random()) {
-  if (!name.trim()) {
-    name = 'Nameless Wonder';
+  const matches = renderSections({ query: rawQuery });
+  if (matches === 0) {
+    heroNote.textContent = `No matches found for “${rawQuery}”. Showing all sections instead.`;
+    renderSections();
+    scrollToFirstMatch();
+    return;
   }
 
-  lastName = name;
-  lastSeed = seed;
+  const plural = matches === 1 ? 'section' : 'sections';
+  heroNote.textContent = `Showing ${matches} ${plural} for “${rawQuery}”.`;
+  scrollToFirstMatch();
+};
 
-  const rng = rngFromSeed(seed);
-  const palette = pick(palettes, rng);
-
-  const baseWidth = clamp(name.length * 120, 720, 1180);
-  const baseHeight = clamp(baseWidth * 0.48, 320, 520);
-
-  fitCanvas(baseWidth, baseHeight);
-
-  paintBackground(rng, palette, baseWidth, baseHeight);
-  renderName(name, rng, palette, baseWidth, baseHeight);
-  sprinkleSparks(rng, palette, baseWidth, baseHeight);
-  drawScanlines(baseWidth, baseHeight);
-}
-
-function handleForge(event) {
-  if (event) {
-    event.preventDefault();
+const handleSearchInput = () => {
+  if (searchInput.value === '') {
+    renderSections();
+    heroNote.textContent = defaultHeroNote;
   }
-  forgeNameArt(input.value, Math.random());
-}
+};
 
-function handleShuffle() {
-  forgeNameArt(lastName, Math.random());
-}
+renderNav();
+renderSections();
 
-function handleDownload() {
-  const link = document.createElement('a');
-  link.href = canvas.toDataURL('image/png');
-  const safeName = lastName.trim().replace(/[^a-z0-9]+/gi, '-').replace(/-+/g, '-');
-  link.download = `${safeName || 'name-art'}.png`;
-  link.click();
-}
-
-let resizeTimeout;
-function handleResize() {
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
-    forgeNameArt(lastName, lastSeed);
-  }, 180);
-}
-
-form.addEventListener('submit', handleForge);
-shuffleButton.addEventListener('click', handleShuffle);
-downloadButton.addEventListener('click', handleDownload);
-window.addEventListener('resize', handleResize);
-
-input.addEventListener('focus', () => input.select());
-
-// Initialize with default
-forgeNameArt(lastName, lastSeed);
+searchForm?.addEventListener('submit', handleSearch);
+searchInput?.addEventListener('input', handleSearchInput);
+searchInput?.addEventListener('search', handleSearchInput);
